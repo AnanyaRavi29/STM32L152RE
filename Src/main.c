@@ -151,13 +151,6 @@ char charData1[20];
 char charData2[20];
 char charData3[20];
 char charData4[20];
-
-char time_data[20];
-uint32_t total_run_time_ms = 0;
-uint32_t active_time_ms = 0;
-uint32_t standby_time_ms = 0;
-uint32_t start_time_ms = 0;
-uint32_t end_time_ms = 0;
 /* USER CODE END 0 */
 
 /**
@@ -192,134 +185,76 @@ int main(void)
   MX_TIM6_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_Base_Start(&htim6);
+  /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_TIM_Base_Start(&htim6);
+	  if(DHT22_Start())
+	  	     {
 
 
+	  	       hum1 = DHT22_Read();
+	  	       hum2 = DHT22_Read();
+	  	       tempC1 = DHT22_Read();
+	  	       tempC2 = DHT22_Read();
+	  	       SUM = DHT22_Read();
+	  	       CHECK = hum1 + hum2 + tempC1 + tempC2;
+	  	       if (CHECK == SUM)
+	  	       {
+	  	         if (tempC1>127)
+	  	         {
+	  	           temp_Celsius = (float)tempC2/10*(-1);
+	  	         }
+	  	         else
+	  	         {
+	  	           temp_Celsius = (float)((tempC1<<8)|tempC2)/10;
+	  	         }
 
-	        if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
-	          {
-	            /* Clear Standby flag */
-	        	start_time_ms = HAL_GetTick();
-	            __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
-	            HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,1);
-	            char *wakeUpMsg = "MCU has woken up from standby mode.\r\n";
-	                HAL_UART_Transmit(&huart2, (uint8_t *)wakeUpMsg, strlen(wakeUpMsg), HAL_MAX_DELAY);
-	                HAL_Delay(1000);
+	  	         temp_Fahrenheit = temp_Celsius * 9/5 + 32;
 
-	                char *wakeUpMsg1 = "Collecting sensor data.\r\n";
-	                        HAL_UART_Transmit(&huart2, (uint8_t *)wakeUpMsg1, strlen(wakeUpMsg1), HAL_MAX_DELAY);
-
-	                        HAL_Delay(2000);
-	                        	  if(DHT22_Start())
-	                        	  	     {
-
-
-	                        	  	       hum1 = DHT22_Read();
-	                        	  	       hum2 = DHT22_Read();
-	                        	  	       tempC1 = DHT22_Read();
-	                        	  	       tempC2 = DHT22_Read();
-	                        	  	       SUM = DHT22_Read();
-	                        	  	       CHECK = hum1 + hum2 + tempC1 + tempC2;
-	                        	  	       if (CHECK == SUM)
-	                        	  	       {
-	                        	  	         if (tempC1>127)
-	                        	  	         {
-	                        	  	           temp_Celsius = (float)tempC2/10*(-1);
-	                        	  	         }
-	                        	  	         else
-	                        	  	         {
-	                        	  	           temp_Celsius = (float)((tempC1<<8)|tempC2)/10;
-	                        	  	         }
-
-	                        	  	         temp_Fahrenheit = temp_Celsius * 9/5 + 32;
-
-	                        	  	         Humidity = (float) ((hum1<<8)|hum2)/10;
+	  	         Humidity = (float) ((hum1<<8)|hum2)/10;
 
 
-	                        	  	         hum_integral = Humidity;
-	                        	  	         hum_decimal = Humidity*10-hum_integral*10;
+	  	         hum_integral = Humidity;
+	  	         hum_decimal = Humidity*10-hum_integral*10;
 
-	                        	  	         printf("Relative Humidity : %d.%d %%  \n", hum_integral, hum_decimal);
-	                        	  	         sprintf(charData1,"Relative Humidity is : %d.%d \r\n",hum_integral,hum_decimal);
-	                        	  	       HAL_UART_Transmit(&huart2,(uint8_t *)charData1,strlen(charData1),1000);
+	  	         printf("Relative Humidity : %d.%d %%  \n", hum_integral, hum_decimal);
+	  	         sprintf(charData1,"Relative Humidity is : %d.%d \r\n",hum_integral,hum_decimal);
+	  	       HAL_UART_Transmit(&huart2,(uint8_t *)charData1,strlen(charData1),1000);
 
 
 
 
-	                        	  	           tempC_integral = temp_Celsius;
-	                        	  	           tempC_decimal = temp_Celsius*10-tempC_integral*10;
+	  	           tempC_integral = temp_Celsius;
+	  	           tempC_decimal = temp_Celsius*10-tempC_integral*10;
 
 
-	                        	  	           printf("Temp in Celcius %d.%d C   \n", tempC_integral, tempC_decimal);
-	                        	  	         sprintf(charData2,"Temp in Celcius: %d.%d C \r\n",tempC_integral, tempC_decimal);
-	                        	  	        HAL_UART_Transmit(&huart2,(uint8_t *)charData2,strlen(charData2),1000);
+	  	           printf("Temp in Celcius %d.%d C   \n", tempC_integral, tempC_decimal);
+	  	         sprintf(charData2,"Temp in Celcius: %d.%d C \r\n",tempC_integral, tempC_decimal);
+	  	        HAL_UART_Transmit(&huart2,(uint8_t *)charData2,strlen(charData2),1000);
 
 
 
-	                        	  	           tempF_integral = temp_Fahrenheit;
-	                        	  	           tempF_decimal = temp_Fahrenheit*10-tempF_integral*10;
+	  	           tempF_integral = temp_Fahrenheit;
+	  	           tempF_decimal = temp_Fahrenheit*10-tempF_integral*10;
 
 
-	                        	  	           printf("Temp in Fahrenheit %d.%d F   \n", tempF_integral, tempF_decimal);
-	                        	  	         sprintf(charData3,"Temp in Fahrenheit: %d.%d F \r\n",tempF_integral, tempF_decimal);
-	                        	  	        HAL_UART_Transmit(&huart2,(uint8_t *)charData3,strlen(charData3),1000);
+	  	           printf("Temp in Fahrenheit %d.%d F   \n", tempF_integral, tempF_decimal);
+	  	         sprintf(charData3,"Temp in Fahrenheit: %d.%d F \r\n",tempF_integral, tempF_decimal);
+	  	        HAL_UART_Transmit(&huart2,(uint8_t *)charData3,strlen(charData3),1000);
 
-	                        	  	      sprintf(charData4,"*************************************************************** \r\n");
-	                        	  	      	  	        HAL_UART_Transmit(&huart2,(uint8_t *)charData4,strlen(charData4),1000);
-
-	                        	  	       }
-	                        	  	     }
-//	                        	  sprintf(time_data, "Total Run Time: %lu ms \r\n", total_run_time_ms);
-//	                        	  HAL_UART_Transmit(&huart2, (uint8_t *)time_data, strlen(time_data), HAL_MAX_DELAY);
-	                        	  end_time_ms = HAL_GetTick();
-	                        	  	          active_time_ms = end_time_ms - start_time_ms;
-	                        	  sprintf(time_data, "Active Time: %lu ms \r\n", active_time_ms);
-	                        	  HAL_UART_Transmit(&huart2, (uint8_t *)time_data, strlen(time_data), HAL_MAX_DELAY);
-
-//	                        	  sprintf(time_data, "Standby Time: %lu ms \r\n", standby_time_ms);
-//	                        	  HAL_UART_Transmit(&huart2, (uint8_t *)time_data, strlen(time_data), HAL_MAX_DELAY);
-
-	          }
-
-
-	        HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-
-	          /* Re-enable all used wakeup sources*/
-	          /* ## Setting the Wake up time ############################################*/
-	          /*  RTC Wakeup Interrupt Generation:
-	            Wakeup Time Base = (RTC_WAKEUPCLOCK_RTCCLK_DIV /(LSI))
-	            Wakeup Time = Wakeup Time Base * WakeUpCounter
-	              = (RTC_WAKEUPCLOCK_RTCCLK_DIV /(LSI)) * WakeUpCounter
-	              ==> WakeUpCounter = Wakeup Time / Wakeup Time Base
-
-	            To configure the wake up timer to 4s the WakeUpCounter is set to 0x1FFF:
-	            RTC_WAKEUPCLOCK_RTCCLK_DIV = RTCCLK_Div16 = 16
-	            Wakeup Time Base = 16 /(~39.000KHz) = ~0,410 ms
-	            Wakeup Time = ~4s = 0,410ms  * WakeUpCounter
-	              ==> WakeUpCounter = ~4s/0,410ms = 9750 = 0x2616 */
-	          HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0x5F86, RTC_WAKEUPCLOCK_RTCCLK_DIV16);
-
-	          /* Clear all related wakeup flags */
-	          __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-	          HAL_GPIO_WritePin(GPIOA,GPIO_PIN_5,0);
-
-
-	          char *standbyMsg = "MCU is entering standby mode.\r\n";
-	            HAL_UART_Transmit(&huart2, (uint8_t *)standbyMsg, strlen(standbyMsg), HAL_MAX_DELAY);
-	          /* Enter the Standby mode */
-	            //standby_time_ms = HAL_GetTick() - active_time_ms;
-	          HAL_PWR_EnterSTANDBYMode();
-	    /* USER CODE END 2 */
+	  	      sprintf(charData4,"*************************************************************** \r\n");
+	  	      	  	        HAL_UART_Transmit(&huart2,(uint8_t *)charData4,strlen(charData4),1000);
+	  	      	  	        HAL_Delay(2000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+  }
 }
 
 /**
@@ -339,14 +274,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSE;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL4;
-  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLL_DIV2;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+  RCC_OscInitStruct.MSICalibrationValue = 0;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_5;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -356,25 +289,21 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
-
-  /** Enables the Clock Security System
-  */
-  HAL_RCCEx_EnableLSECSS();
 }
 
 /**
@@ -450,14 +379,7 @@ static void MX_RTC_Init(void)
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 0x1;
   sAlarm.Alarm = RTC_ALARM_A;
-  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Enable the WakeUp
-  */
-  if (HAL_RTCEx_SetWakeUpTimer(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
+  if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -545,7 +467,6 @@ static void MX_USART2_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
@@ -554,25 +475,12 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : PA6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
-{
-	// Callback called from the RTC interrupt service routine
-}
+
 /* USER CODE END 4 */
 
 /**
